@@ -154,6 +154,7 @@ to the static set of services rendered from configuration.`,
 			return printNetworkStatus(cmd.OutOrStdout(), networkStatus(cfg.Interfaces.Ethernets))
 		},
 	})
+	cmd.AddCommand(servicesCmd, networkCmd)
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)

@@ -25,6 +25,7 @@ import (
 	controlconfig "github.com/scionproto/scion/control/config"
 	daemonconfig "github.com/scionproto/scion/daemon/config"
 	dispatcherconfig "github.com/scionproto/scion/dispatcher/config"
+	hbirdconfig "github.com/scionproto/scion/hbird/config"
 	"github.com/scionproto/scion/pkg/addr"
 	"github.com/scionproto/scion/pkg/log"
 	"github.com/scionproto/scion/pkg/private/serrors"
@@ -60,6 +61,7 @@ const (
 	binControl    = "control"
 	binDispatcher = "dispatcher"
 	binDaemon     = "daemon"
+	binHbird      = "hummingbird"
 )
 
 // Render produces the service configuration file(s) for the elements present
@@ -94,6 +96,17 @@ func Render(cfg clabconfig.Config) ([]ServiceFile, error) {
 			f, err := renderDaemon(as.Daemon)
 			if err != nil {
 				return nil, serrors.Wrap("rendering daemon", err, "id", as.Daemon.ID)
+			}
+			files = append(files, f)
+		}
+		if as.Hummingbird != nil {
+			if as.Control == nil {
+				return nil, serrors.New("hummingbird requires a control service on the host",
+					"id", as.Hummingbird.ID)
+			}
+			f, err := renderHummingbird(as.Hummingbird, as.Control)
+			if err != nil {
+				return nil, serrors.Wrap("rendering hummingbird", err, "id", as.Hummingbird.ID)
 			}
 			files = append(files, f)
 		}
@@ -156,6 +169,19 @@ func renderDaemon(d *clabconfig.Daemon) (ServiceFile, error) {
 		SD:      daemonconfig.SDConfig{Address: addrString(d.Address)},
 	}
 	return marshal(d.ID+".toml", binDaemon, cfg)
+}
+
+func renderHummingbird(h *clabconfig.Hummingbird, c *clabconfig.Control) (ServiceFile, error) {
+	cfg := hbirdconfig.Config{
+		General: env.General{ID: h.ID, ConfigDir: configDir},
+		Logging: consoleLog(),
+		HB: hbirdconfig.HBConfig{
+			// The service reads the certificates and TRCs that the control
+			// service stores in its trust database.
+			TrustDBPath: db(c.ID, "trust").Connection,
+		},
+	}
+	return marshal(h.ID+".toml", binHbird, cfg)
 }
 
 func consoleLog() log.Config {

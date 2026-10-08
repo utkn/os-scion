@@ -93,6 +93,7 @@ func TestRenderServices(t *testing.T) {
 			Address: netip.MustParseAddrPort("127.0.0.1:30255"),
 			APIAddr: netip.MustParseAddrPort("10.1.0.1:30455"),
 		},
+		Hummingbird: &config.Hummingbird{ID: "hbird1-ff00_0_110"},
 	}}}}
 
 	confDir := t.TempDir()
@@ -100,7 +101,7 @@ func TestRenderServices(t *testing.T) {
 	require.NoError(t, err)
 
 	cfgArg := func(f string) []string { return []string{"--config", filepath.Join(confDir, f)} }
-	// Dispatcher first (start order), then by service id.
+	// Dispatcher first and hummingbird last (start order), then by service id.
 	want := []service{
 		{
 			name:   "disp_cs1-ff00_0_110-1",
@@ -121,6 +122,11 @@ func TestRenderServices(t *testing.T) {
 			name:   "sd",
 			binary: "/app/daemon",
 			args:   cfgArg("sd.toml"),
+		},
+		{
+			name:   "hbird1-ff00_0_110",
+			binary: "/app/hummingbird",
+			args:   cfgArg("hbird1-ff00_0_110.toml"),
 		},
 	}
 	assert.Equal(t, want, got)

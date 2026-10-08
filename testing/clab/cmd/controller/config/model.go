@@ -44,13 +44,17 @@ type SCION struct {
 // fields are set exactly for the elements running on this host; their presence
 // is the host's role.
 type AS struct {
-	ISDAS     addr.IA    `json:"isd_as" yaml:"isd_as"`
-	Core      bool       `json:"core" yaml:"core"`
-	MTU       int        `json:"mtu" yaml:"mtu"`
-	Router    *Router    `json:"router,omitempty" yaml:"router,omitempty"`
-	Control   *Control   `json:"control,omitempty" yaml:"control,omitempty"`
-	Daemon    *Daemon    `json:"daemon,omitempty" yaml:"daemon,omitempty"`
-	Neighbors []Neighbor `json:"neighbors,omitempty" yaml:"neighbors,omitempty"`
+	ISDAS   addr.IA  `json:"isd_as" yaml:"isd_as"`
+	Core    bool     `json:"core" yaml:"core"`
+	MTU     int      `json:"mtu" yaml:"mtu"`
+	Router  *Router  `json:"router,omitempty" yaml:"router,omitempty"`
+	Control *Control `json:"control,omitempty" yaml:"control,omitempty"`
+	Daemon  *Daemon  `json:"daemon,omitempty" yaml:"daemon,omitempty"`
+	// Hummingbird is the Hummingbird per-AS redemption service. It requires
+	// Control on the same host, because it shares the trust database of the
+	// control service.
+	Hummingbird *Hummingbird `json:"hummingbird,omitempty" yaml:"hummingbird,omitempty"`
+	Neighbors   []Neighbor   `json:"neighbors,omitempty" yaml:"neighbors,omitempty"`
 }
 
 // Router is the data-plane (border router) element on this host.
@@ -75,6 +79,12 @@ type Daemon struct {
 	ID      string         `json:"id" yaml:"id"`
 	Address netip.AddrPort `json:"address" yaml:"address"`
 	APIAddr netip.AddrPort `json:"api_addr" yaml:"api_addr"`
+}
+
+// Hummingbird is the Hummingbird per-AS redemption service element on this
+// host. The service binds to the control service IP from topology.json.
+type Hummingbird struct {
+	ID string `json:"id" yaml:"id"`
 }
 
 // Neighbor is a neighboring AS reachable over one or more interfaces on this

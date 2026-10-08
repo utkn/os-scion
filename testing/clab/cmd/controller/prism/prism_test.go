@@ -117,3 +117,35 @@ func TestRenderOnlyPresentElements(t *testing.T) {
 	require.Len(t, files, 1)
 	assert.Equal(t, "br1-ff00_0_110-2.toml", files[0].Name)
 }
+
+func TestRenderHummingbird(t *testing.T) {
+	c := sampleConfig()
+	c.SCION.ASes[0].Hummingbird = &config.Hummingbird{ID: "hbird1-ff00_0_110"}
+	files, err := prism.Render(c)
+	require.NoError(t, err)
+
+	var hbird *prism.ServiceFile
+	for i := range files {
+		if files[i].Name == "hbird1-ff00_0_110.toml" {
+			hbird = &files[i]
+		}
+	}
+	require.NotNil(t, hbird)
+	assert.Equal(t, "hummingbird", hbird.Binary)
+
+	var got map[string]any
+	require.NoError(t, toml.Unmarshal(hbird.Content, &got))
+	general := got["general"].(map[string]any)
+	assert.Equal(t, "hbird1-ff00_0_110", general["id"])
+	assert.Equal(t, "/etc/scion", general["config_dir"])
+	assert.Equal(t, "/var/lib/scion/cs1-ff00_0_110-1.trust.db",
+		got["hummingbird"].(map[string]any)["trust_db_path"])
+}
+
+func TestRenderHummingbirdWithoutControl(t *testing.T) {
+	c := sampleConfig()
+	c.SCION.ASes[0].Control = nil
+	c.SCION.ASes[0].Hummingbird = &config.Hummingbird{ID: "hbird"}
+	_, err := prism.Render(c)
+	assert.Error(t, err)
+}

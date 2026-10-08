@@ -48,6 +48,9 @@ var startOrder = map[string]int{
 	"router":     1,
 	"control":    2,
 	"daemon":     3,
+	// hummingbird shares the trust database of the control service, so it
+	// starts after it.
+	"hummingbird": 4,
 }
 
 // renderServices renders the prism configuration into the per-service TOML
