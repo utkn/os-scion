@@ -3,7 +3,8 @@ load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
 # All SCION binaries the controller supervises, plus the controller itself
 # (the image entrypoint / PID 1), the scion CLI for in-node debugging, and the
-# e2e_http server/client used by the HTTP/3 end-to-end test. They are packaged
+# e2e_http server/client used by the HTTP/3 end-to-end test, and the
+# hummbwtester client/server for Hummingbird traffic tests. They are packaged
 # into /app, which is where the controller looks for them by default
 # (--bin-dir, SCION_BIN_DIR).
 pkg_tar(
@@ -12,9 +13,11 @@ pkg_tar(
         "//control/cmd/control",
         "//daemon/cmd/daemon",
         "//dispatcher/cmd/dispatcher",
+        "//hbird/cmd/hummingbird",
         "//router/cmd/router",
         "//scion/cmd/scion",
         "//testing/clab/cmd/controller",
+        "//tools/hummbwtester",
         # FIXME: Will be introduced in a follow up.
         # "//testing/clab/cmd/e2e_http",
     ],
