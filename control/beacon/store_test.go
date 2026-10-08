@@ -31,18 +31,18 @@ import (
 
 func TestStoreSegmentsToRegister(t *testing.T) {
 	testStoreSelection(t, func(store *beacon.Store) ([]beacon.Beacon, error) {
-		s, err := store.SegmentsToRegister(context.Background(), seg.TypeUp)
+		beacons, _, err := store.SegmentsToRegister(context.Background(), seg.TypeUp)
 		if err != nil {
 			return nil, err
 		}
-		return s[beacon.DefaultGroup], nil
+		return beacons, nil
 	})
 	testStoreSelection(t, func(store *beacon.Store) ([]beacon.Beacon, error) {
-		s, err := store.SegmentsToRegister(context.Background(), seg.TypeDown)
+		beacons, _, err := store.SegmentsToRegister(context.Background(), seg.TypeDown)
 		if err != nil {
 			return nil, err
 		}
-		return s[beacon.DefaultGroup], nil
+		return beacons, nil
 	})
 }
 
@@ -52,8 +52,10 @@ func TestStoreBeaconsToPropagate(t *testing.T) {
 	})
 }
 
-func testStoreSelection(t *testing.T,
-	methodToTest func(store *beacon.Store) ([]beacon.Beacon, error)) {
+func testStoreSelection(
+	t *testing.T,
+	methodToTest func(store *beacon.Store,
+	) ([]beacon.Beacon, error)) {
 
 	mctrl := gomock.NewController(t)
 	g := graph.NewDefaultGraph(mctrl)
@@ -150,11 +152,11 @@ func testStoreSelection(t *testing.T,
 
 func TestCoreStoreSegmentsToRegister(t *testing.T) {
 	testCoreStoreSelection(t, func(store *beacon.CoreStore) ([]beacon.Beacon, error) {
-		s, err := store.SegmentsToRegister(context.Background(), seg.TypeCore)
+		beacons, _, err := store.SegmentsToRegister(context.Background(), seg.TypeCore)
 		if err != nil {
 			return nil, err
 		}
-		return s[beacon.DefaultGroup], nil
+		return beacons, nil
 	})
 }
 
@@ -274,10 +276,9 @@ func testCoreStoreSelection(t *testing.T,
 }
 
 func testBeacon(g *graph.Graph, desc ...uint16) beacon.Beacon {
-	pseg := testSegment(g, desc)
-	asEntry := pseg.ASEntries[pseg.MaxIdx()]
+	pseg := testSegment(g, desc[:len(desc)-1])
 	return beacon.Beacon{
-		InIfID:  asEntry.HopEntry.HopField.ConsIngress,
+		InIfID:  desc[len(desc)-1],
 		Segment: pseg,
 	}
 }

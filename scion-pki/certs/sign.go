@@ -25,6 +25,7 @@ import (
 
 	"github.com/scionproto/scion/pkg/private/serrors"
 	"github.com/scionproto/scion/pkg/scrypto/cppki"
+	"github.com/scionproto/scion/private/app"
 	"github.com/scionproto/scion/private/app/command"
 	"github.com/scionproto/scion/private/app/flag"
 	scionpki "github.com/scionproto/scion/scion-pki"
@@ -35,6 +36,7 @@ import (
 func newSignCmd(pather command.Pather) *cobra.Command {
 	now := time.Now().UTC()
 	var flags struct {
+		extKeyUsageFlags
 		profile   string
 		notBefore flag.Time
 		notAfter  flag.Time
@@ -94,9 +96,14 @@ and not to \--not-before.
 				return serrors.New("not supported", "profile", flags.profile)
 			}
 
+			opts, err := flags.options()
+			if err != nil {
+				return err
+			}
+
 			cmd.SilenceUsage = true
 
-			csrRaw, err := os.ReadFile(args[0])
+			csrRaw, err := app.ReadFileOrStdin(args[0])
 			if err != nil {
 				return serrors.Wrap("loading CSR", err)
 			}
@@ -138,7 +145,7 @@ and not to \--not-before.
 				NotAfter:  notAfterFromFlags(ct, flags.notBefore, flags.notAfter),
 				CAKey:     caKey,
 				CACert:    caCert,
-			})
+			}, opts...)
 			if err != nil {
 				return serrors.Wrap("creating certificate", err)
 			}
@@ -197,6 +204,7 @@ offset from the current time.`,
 	cmd.Flags().BoolVar(&flags.bundle, "bundle", false,
 		"Bundle the certificate with the issuer certificate as a certificate chain",
 	)
+	addExtKeyUsageFlags(cmd.Flags(), &flags.extKeyUsageFlags)
 	scionpki.BindFlagKmsCA(cmd.Flags(), &flags.caKms)
 	if err := cmd.MarkFlagRequired("ca"); err != nil {
 		panic(err)

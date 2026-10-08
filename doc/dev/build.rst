@@ -45,25 +45,20 @@ Build
 
    .. code-block:: bash
 
-      CGO_ENABLED=0 go build -o bin/ ./{router,control,dispatcher,daemon,scion,scion-pki,gateway}/cmd/...
+      go build -o bin/ ./{router,control,dispatcher,daemon,scion,scion-pki,gateway}/cmd/...
+
+   .. warning::
+
+      The control service and the daemon need cgo for their sqlite driver
+      (``github.com/mattn/go-sqlite3``). Building them requires a C compiler. Without one,
+      ``go`` silently sets ``CGO_ENABLED=0``, the build still succeeds, but both binaries
+      fail at startup, as soon as they try to open their database.
 
 * **Build all**
 
    .. code-block:: bash
 
       go build -o bin/ ./...
-
-Options
--------
-
-* sqlite implementations: two different sqlite implementations can be chosen at build time:
-
-  - `modernc/sqlite <https://pkg.go.dev/modernc.org/sqlite>`_: **default**. A pure go implementation of sqlite (transpiled from C).
-  - `mattn/go-sqlite3 <https://github.com/mattn/go-sqlite3>`_: A CGO wrapper for the official sqlite implementation.
-    It is well established but requires CGO; this makes it impossible to build static binaries and
-    executables are dependent on a minimum glibc version.
-
-  Specify build tag (``go build -tags=<...>``) either ``sqlite_modernc`` or ``sqlite_mattn``.
 
 Building with Bazel
 ===================
@@ -144,12 +139,14 @@ Options
 
       bazel build --//:mgmtapi_bundle_doc=true //:scion
 
-* sqlite implementations: specify a build tag, ``sqlite_modernc`` or ``sqlite_mattn``.
+glibc dependency
+----------------
 
-   .. code-block:: sh
-
-      bazel build --define gotags=sqlite_mattn <...>
-
+SCION currently relies on `mattn/go-sqlite3 <https://github.com/mattn/go-sqlite3>`_, a CGO-based
+wrapper around SQLite. It is well established, but the CGO dependency complicates the build of
+static binaries. In typical glibc-based Linux builds, the resulting executable is often
+dynamically linked and may depend on a minimum glibc version. Fully static binaries are still
+possible, but require extra tooling.
 
 .. seealso::
 
