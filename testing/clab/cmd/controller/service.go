@@ -18,8 +18,10 @@ package main
 
 import (
 	"cmp"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -76,6 +78,14 @@ func renderServices(cfg config.Config, configDir, binDir string) ([]service, err
 		})
 	}
 
+	if slices.ContainsFunc(files, func(f prism.ServiceFile) bool {
+		return f.Binary == "hummingbird"
+	}) {
+		if err := linkHummingbirdKeys(configDir); err != nil {
+			return nil, err
+		}
+	}
+
 	slices.SortFunc(services, func(a, b service) int {
 		return cmp.Or(
 			cmp.Compare(startOrder[filepath.Base(a.binary)], startOrder[filepath.Base(b.binary)]),
@@ -83,6 +93,23 @@ func renderServices(cfg config.Config, configDir, binDir string) ([]service, err
 		)
 	})
 	return services, nil
+}
+
+// linkHummingbirdKeys makes the AS master keys in <configDir>/keys available at
+// <configDir>/dummy_keys, where the per-AS redemption service loads them. The
+// router derives the Hummingbird secret value from the same keys, so both
+// services must use the same files. An existing dummy_keys entry is kept.
+func linkHummingbirdKeys(configDir string) error {
+	link := filepath.Join(configDir, "dummy_keys")
+	if _, err := os.Lstat(link); err == nil {
+		return nil
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("checking %q: %w", link, err)
+	}
+	if err := os.Symlink("keys", link); err != nil {
+		return fmt.Errorf("linking %q to the master keys: %w", link, err)
+	}
+	return nil
 }
 
 // printServices writes the discovered services as an aligned table: the service

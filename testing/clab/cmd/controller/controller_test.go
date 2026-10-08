@@ -135,6 +135,10 @@ func TestRenderServices(t *testing.T) {
 		_, err := os.Stat(s.args[1])
 		assert.NoErrorf(t, err, "expected rendered config %q", s.args[1])
 	}
+	// The per-AS redemption service finds the master keys at dummy_keys.
+	target, err := os.Readlink(filepath.Join(confDir, "dummy_keys"))
+	require.NoError(t, err)
+	assert.Equal(t, "keys", target)
 }
 
 // TestPrintServices checks the rendered table lists each service with its
